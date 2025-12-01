@@ -1,0 +1,5 @@
+{
+  "name": "Copy of ApexFlow Visualizer",
+  "description": "An intelligent tool that converts Salesforce Apex code into interactive, visual flowcharts resembling Salesforce Flow, featuring logic analysis and best practice detection.",
+  "requestFramePermissions": []
+}
