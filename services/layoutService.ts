@@ -95,5 +95,21 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
     return node;
   });
 
+  // Ensure END node is always at the bottom
+  const endNode = layoutedNodes.find(node => node.type === ApexNodeType.END);
+  if (endNode) {
+    // Find the maximum Y position among all non-END nodes
+    const maxY = layoutedNodes
+      .filter(node => node.type !== ApexNodeType.END)
+      .reduce((max, node) => {
+        const nodeBottom = node.position.y + (node.type === ApexNodeType.DECISION ? 200 : 80);
+        return Math.max(max, nodeBottom);
+      }, 0);
+    
+    // Position END node below all other nodes with spacing
+    const spacing = 120; // Same as ranksep
+    endNode.position.y = maxY + spacing;
+  }
+
   return { nodes: layoutedNodes, edges };
 };

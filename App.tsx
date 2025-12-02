@@ -372,6 +372,56 @@ export default function App() {
                     <Controls className="!bg-white !border-slate-200 !shadow-sm !rounded-lg !m-4" />
                     <DraggableMiniMapWrapper />
                 </ReactFlow>
+
+                {/* Loading Overlay with Blur and Animation */}
+                {loading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-md z-50 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-6 animate-fadeIn">
+                            {/* Animated Flow Icon */}
+                            <div className="relative">
+                                {/* Outer Pulse Ring */}
+                                <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping" style={{ animationDuration: '1.5s' }}></div>
+                                
+                                {/* Middle Pulse Ring */}
+                                <div className="absolute inset-2 rounded-full bg-blue-500/30 animate-ping" style={{ animationDuration: '2s' }}></div>
+                                
+                                {/* Core Circle with Icon */}
+                                <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/50">
+                                    <Activity size={40} className="text-white animate-pulse" />
+                                </div>
+
+                                {/* Orbiting Dots */}
+                                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
+                                    <div className="absolute top-0 left-1/2 w-3 h-3 bg-blue-500 rounded-full -translate-x-1/2 shadow-lg"></div>
+                                </div>
+                                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}>
+                                    <div className="absolute bottom-0 left-1/2 w-2 h-2 bg-indigo-500 rounded-full -translate-x-1/2 shadow-lg"></div>
+                                </div>
+                                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '2.5s' }}>
+                                    <div className="absolute top-1/2 right-0 w-2.5 h-2.5 bg-violet-500 rounded-full -translate-y-1/2 shadow-lg"></div>
+                                </div>
+                            </div>
+
+                            {/* Loading Text */}
+                            <div className="text-center">
+                                <h3 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-3">
+                                    Analyzing your Apex
+                                    <span className="inline-flex gap-1">
+                                        <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></span>
+                                        <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></span>
+                                        <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></span>
+                                    </span>
+                                </h3>
+                                <p className="text-sm text-slate-600 font-medium">Building your visualization, one moment...</p>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="w-64 h-1.5 bg-slate-200 rounded-full overflow-hidden shadow-inner">
+                                <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-full animate-progressBar"></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Warnings Panel */}

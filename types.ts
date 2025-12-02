@@ -43,50 +43,55 @@ export interface FlowState {
 
 // Sample code for the initial state
 export const SAMPLE_APEX_CODE = `trigger OpportunityStage4Task on Opportunity (after update) {
-    // Initialize a list to hold all tasks that will be created
-    List<Task> tasksToCreate = new List<Task>();
+    // 1. Collect Opportunity IDs that moved to Stage 4
+    Set<Id> stage4OppIds = new Set<Id>();
     
-    // Loop through each updated opportunity record
     for (Opportunity opp : Trigger.new) {
-        // Get the old version of the opportunity to compare values
         Opportunity oldOpp = Trigger.oldMap.get(opp.Id);
-        
-        // Check if the opportunity stage has moved to 'Stage 4'
-        // Only proceed if it wasn't already in Stage 4
         if (opp.StageName == 'Stage 4' && oldOpp.StageName != 'Stage 4') {
-            
-            // Query for the primary contact role associated with this opportunity
-            List<OpportunityContactRole> contactRoles = [
-                SELECT ContactId, Contact.Name 
-                FROM OpportunityContactRole 
-                WHERE OpportunityId = :opp.Id 
-                AND IsPrimary = true
-                LIMIT 1
-            ];
-            
-            // Check if a primary contact was found
-            if (!contactRoles.isEmpty()) {
-                OpportunityContactRole primaryContact = contactRoles[0];
-                
-                // Create a new task for the sales rep
-                Task newTask = new Task(
-                    Subject = 'Call ' + primaryContact.Contact.Name,
-                    Description = 'Follow up on ' + opp.Name + ' - Call main contact ' + primaryContact.Contact.Name,
-                    WhoId = primaryContact.ContactId,
-                    WhatId = opp.Id,
-                    OwnerId = opp.OwnerId,
-                    Status = 'Open',
-                    Priority = 'High',
-                    ActivityDate = Date.today().addDays(1)
-                );
-                
-                // Add the task to the list for bulk creation
-                tasksToCreate.add(newTask);
-            }
+            stage4OppIds.add(opp.Id);
         }
     }
     
-    // Insert all tasks at once if any were created
+    // Exit early if no opportunities moved to Stage 4
+    if (stage4OppIds.isEmpty()) {
+        return;
+    }
+    
+    // 2. Query ALL primary contact roles in ONE query (outside the loop)
+    Map<Id, OpportunityContactRole> oppIdToContactRole = new Map<Id, OpportunityContactRole>();
+    
+    for (OpportunityContactRole ocr : [
+        SELECT ContactId, Contact.Name, OpportunityId
+        FROM OpportunityContactRole
+        WHERE OpportunityId IN :stage4OppIds
+        AND IsPrimary = true
+    ]) {
+        oppIdToContactRole.put(ocr.OpportunityId, ocr);
+    }
+    
+    // 3. Build tasks using the map
+    List<Task> tasksToCreate = new List<Task>();
+    
+    for (Opportunity opp : Trigger.new) {
+        if (stage4OppIds.contains(opp.Id) && oppIdToContactRole.containsKey(opp.Id)) {
+            OpportunityContactRole primaryContact = oppIdToContactRole.get(opp.Id);
+            
+            Task newTask = new Task(
+                Subject = 'Call ' + primaryContact.Contact.Name,
+                Description = 'Follow up on ' + opp.Name + ' - Call main contact ' + primaryContact.Contact.Name,
+                WhoId = primaryContact.ContactId,
+                WhatId = opp.Id,
+                OwnerId = opp.OwnerId,
+                Status = 'Open',
+                Priority = 'High',
+                ActivityDate = Date.today().addDays(1)
+            );
+            tasksToCreate.add(newTask);
+        }
+    }
+    
+    // 4. Bulk insert
     if (!tasksToCreate.isEmpty()) {
         insert tasksToCreate;
     }
